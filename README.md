@@ -81,8 +81,15 @@ npx expo-doctor      # Expo dependency and config health
 
 ## Privacy and security
 
-- **Everything stays on the phone**, in a local SQLite database. No account, no cloud, no analytics or
+- **Everything stays on the phone**, in a local SQLite database. No account, no Daybook server, no analytics or
   trackers, and the app makes no network requests.
+- **Your phone's own backup still covers it.** On Android, if phone backup is on (it usually is), Google's
+  automatic backup includes Daybook's data. It's end-to-end encrypted with your screen lock on Android 9 and
+  later, and comes back when you reinstall Daybook on a new or reset phone. If a restored app lock finds no
+  screen lock on that phone, it switches itself off instead of locking you out. On iPhone, Daybook is part of
+  your normal iCloud or computer backup.
+- **Minimal Android permissions:** the build blocks the storage, photo-library and draw-over-other-apps
+  permissions that Expo's template and libraries would otherwise add.
 - **App lock** with Face ID, Touch ID, fingerprint or passcode. Re-locks immediately, after 1 minute or after
   5 minutes away. It can only be turned on after a successful unlock, so you can't lock yourself out.
 - **Privacy screen** (on by default): iOS hides content in the app switcher. Android also blocks screenshots
@@ -93,7 +100,7 @@ npx expo-doctor      # Expo dependency and config health
 - **Backups are plain JSON**, so store exported files somewhere private. On import, every row is validated:
   unknown fields are dropped, invalid rows skipped and counted, and the file is capped at 25 MB. Importing
   merges by ID, and the newer edit wins.
-- App lock and privacy settings are per device and never included in backups.
+- Exported backups never include app lock or privacy settings.
 
 ## Project layout
 
@@ -122,13 +129,25 @@ npx eas-cli@latest login
 npx eas-cli@latest init
 ```
 
-Commit your work to git before each build. EAS uses git to decide which files to upload.
+This copy is already linked to the Expo project `@swarupcsenits/daybook` (`owner` and `extra.eas.projectId` in
+`app.json`), so you don't need `init` again. Run `login` only on a new computer or after signing out.
+
+EAS uploads the project folder, including uncommitted changes, and skips anything listed in `.gitignore`.
+Commit before each build so every build matches a commit you can return to.
+
+EAS created the Android signing key on the first build and keeps it on Expo's servers. Every future APK must be
+signed with that same key or it won't install over the old one, so keep it on EAS. To download a backup, run
+`npx eas-cli@latest credentials -p android`.
 
 **Android (free):** builds an installable APK and gives you a download link and QR code.
 
 ```powershell
 npx eas-cli@latest build -p android --profile preview
 ```
+
+The APK contains only ARM code, 64-bit and 32-bit, which covers practically every Android phone. It leaves out
+the x86 code that only emulators use, and the native code is stored compressed so the download stays small. To
+run it on an x86 emulator, add `"x86_64"` to `buildArchs` under `expo-build-properties` in `app.json` first.
 
 **iPhone:** installing outside Expo Go needs a paid **Apple Developer Program** membership (US$99/year).
 
